@@ -1,0 +1,1 @@
+local u="https://iili.io/nkTuWNt.png" local d=game:HttpGet(u) local a,b="--@@LUA_EMBED_START@@","--@@LUA_EMBED_END@@" local s=d:find(a,1,true) local e=s and d:find(b,s,true) assert(s and e,"no lua in png") local f,err=loadstring(d:sub(s+#a,e-1),"@"..u) assert(f,err) f()
