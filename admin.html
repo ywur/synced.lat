@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche — Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--ink:#fff;--ink-soft:rgba(255,255,255,.65);--ink-faint:rgba(255,255,255,.4);--line:rgba(255,255,255,.1);--line-strong:rgba(255,255,255,.22);--grad:linear-gradient(100deg,#fff 0%,#c8c8c8 30%,#fff 55%,#b8b8b8 80%,#fff 100%)}
+html,body{height:100%;background:#000;overflow:hidden;font-family:'Sora',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#sky{position:fixed;inset:0;z-index:1;display:block}
+.grad{background-image:var(--grad);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+
+.stage{position:fixed;inset:0;z-index:3;padding:.55rem;display:flex;flex-direction:column;gap:.45rem}
+.hero{text-align:center;position:relative;padding:2px 0;user-select:none}
+.title{font-family:'Cinzel',serif;font-weight:600;font-size:clamp(1.7rem,3.2vw,2.35rem);letter-spacing:.04em;line-height:1;background-image:linear-gradient(100deg,#fff 0%,#9a9a9a 26%,#fff 46%,#c0c0c0 62%,#fff 78%,#fff 100%);background-size:250% 100%;animation:sheen 9s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(255,255,255,.18))}
+@keyframes sheen{0%{background-position:0 50%}50%{background-position:125% 50%}100%{background-position:250% 50%}}
+.sub{margin-top:.15rem;font-weight:500;font-size:.55rem;letter-spacing:.55em;text-indent:.55em;text-transform:uppercase}
+.hero-actions{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;gap:5px}
+
+.workspace{flex:1;min-height:0;display:grid;grid-template-columns:250px minmax(0,1fr) 340px;gap:6px}
+@media(max-width:1180px){.workspace{grid-template-columns:220px minmax(0,1fr) 300px}}
+@media(max-width:980px){.workspace{grid-template-columns:220px minmax(0,1fr)}.col-right{display:none}}
+@media(max-width:720px){.workspace{grid-template-columns:1fr}.col-left{display:none}}
+
+.col{min-height:0;display:flex;flex-direction:column;border-radius:10px;background:rgba(0,0,0,.78);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.9)}
+.col-head{display:flex;align-items:center;gap:6px;padding:6px 9px;border-bottom:1px solid var(--line)}
+.col-label{flex:1;font-size:.65rem;font-weight:600;letter-spacing:.04em}
+.col-body{flex:1;min-height:0;overflow-y:auto;padding:6px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent}
+.col-body::-webkit-scrollbar{width:4px}
+.col-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:8px}
+.col-foot{padding:4px 9px;border-top:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.16em;text-transform:uppercase}
+
+input,textarea,select{width:100%;font:inherit;font-size:11px;font-weight:500;background:rgba(255,255,255,.03);color:#fff;border:1px solid rgba(255,255,255,.14);padding:6px 8px;border-radius:7px;outline:none;transition:border-color .18s,box-shadow .18s}
+input:focus,textarea:focus,select:focus{border-color:rgba(255,255,255,.65);box-shadow:0 0 0 3px rgba(255,255,255,.1)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M2 4l3 3 3-3' stroke='%23fff' fill='none' stroke-width='1.4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px}
+select option{background:#000;color:#fff}
+textarea{resize:vertical;min-height:52px;font-family:'JetBrains Mono',monospace;font-size:10.5px}
+
+button{font:inherit;font-size:10.5px;font-weight:500;background:rgba(255,255,255,.04);color:#fff;border:1px solid rgba(255,255,255,.16);padding:5px 9px;border-radius:7px;cursor:pointer;transition:background .18s,border-color .18s}
+button:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.4)}
+button.primary{background:#fff;color:#000;border-color:#fff;font-weight:600}
+button.primary:hover{background:#e8e8e8}
+button.danger{color:#ff9999;border-color:rgba(255,150,150,.28)}
+button.danger:hover{background:rgba(255,120,120,.08);border-color:rgba(255,150,150,.55)}
+button.sm{padding:3px 7px;font-size:9.5px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.icon-btn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;padding:0;font-size:13px;border-radius:6px;background:transparent;color:rgba(255,255,255,.6);border:1px solid transparent}
+.icon-btn:hover{color:#fff;background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
+
+.user-item{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:7px;cursor:pointer;border:1px solid transparent;transition:background .15s,border-color .15s}
+.user-item:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.18)}
+.user-item.active{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.35)}
+.user-item.offline{opacity:.45}
+.user-item .av{width:26px;height:26px;border-radius:50%;flex-shrink:0;object-fit:cover;background:#0a0a0a;border:1px solid rgba(255,255,255,.12)}
+.user-item .meta{min-width:0;flex:1}
+.user-item .nm{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-item .sub{font-size:9px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;flex-shrink:0}
+.live-dot.off{background:#666;box-shadow:none}
+
+.broadcast-bar{display:flex;gap:5px;margin-bottom:7px;padding:7px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.16);align-items:center}
+.broadcast-bar .lbl{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.7;flex-shrink:0}
+
+.cat-title{font-size:.55rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;opacity:.55;margin:12px 2px 5px}
+.cmd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px}
+.cmd-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);cursor:pointer;text-align:left;transition:all .15s;font:inherit;color:#fff}
+.cmd-btn:hover{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.08);transform:translateY(-1px)}
+.cmd-btn .cn{font-size:11px;font-weight:600;letter-spacing:.005em}
+.cmd-btn .cd{font-size:9px;font-weight:400;opacity:.6;line-height:1.3}
+.cmd-btn.danger .cn{color:#ffb4b4}
+.cmd-btn.good .cn{color:#9dffb8}
+.cmd-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+.panel{border-radius:9px;background:rgba(0,0,0,.5);border:1px solid var(--line);padding:9px;margin-bottom:7px}
+.panel h3{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px;opacity:.85;display:flex;justify-content:space-between;align-items:center}
+.row{display:flex;gap:5px;align-items:center;margin-bottom:5px}
+.row label{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.65;width:82px;flex-shrink:0}
+.row input,.row select,.row textarea{flex:1}
+.row.btns{justify-content:flex-end}
+
+.log{font-family:'JetBrains Mono',monospace;font-size:9.5px;line-height:1.55;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid var(--line);max-height:190px;overflow-y:auto}
+.log .l{display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.log .l:last-child{border:0}
+.log .t{color:rgba(255,255,255,.4);flex-shrink:0}
+.log .m{flex:1;word-break:break-word}
+.log .m.ok{color:#9dffb8}
+.log .m.err{color:#ffb4b4}
+.log .m.info{color:rgba(255,255,255,.75)}
+.log .empty{opacity:.5}
+
+.empty{padding:26px 12px;text-align:center;font-size:.75rem;line-height:1.6;opacity:.7}
+.target-pill{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.22);margin-bottom:7px}
+.target-pill .av{width:30px;height:30px;border-radius:50%;flex-shrink:0;object-fit:cover;background:#0a0a0a;border:1px solid rgba(255,255,255,.15)}
+.target-pill .meta{min-width:0;flex:1}
+.target-pill .nm{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.target-pill .sub{font-size:9px;font-family:'JetBrains Mono',monospace;opacity:.8}
+
+.modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-card{width:min(440px,100%);background:#000;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:16px;box-shadow:0 28px 70px #000}
+.modal-card h2{font-family:'Cinzel',serif;font-weight:600;font-size:1.05rem;margin-bottom:3px;letter-spacing:.03em}
+.modal-card p{font-size:10.5px;margin-bottom:12px;line-height:1.55;opacity:.85}
+.modal-card .f{margin-bottom:8px}
+.modal-card .f label{display:block;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.modal-foot{display:flex;justify-content:flex-end;gap:5px;margin-top:14px}
+
+.toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,12px);background:#000;border:1px solid rgba(255,255,255,.28);padding:8px 14px;border-radius:8px;font-size:11px;font-weight:500;opacity:0;pointer-events:none;transition:.24s;z-index:400;box-shadow:0 12px 36px #000}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:rgba(255,150,150,.45);color:#ffb4b4}
+
+.gate{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;padding:20px;background:#000;transition:opacity .35s,visibility .35s}
+.gate.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.gate-card{width:min(320px,100%);text-align:center;padding:24px 20px;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:#000;box-shadow:0 30px 80px #000}
+.gate-card .title{font-size:clamp(1.9rem,8vw,2.4rem)}
+.gate-msg{margin:16px 0 9px;font-size:9.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;opacity:.75}
+.gate-card input{text-align:center;letter-spacing:.22em;font-family:'JetBrains Mono',monospace;font-size:13px;padding:9px;margin-bottom:9px}
+.gate-card button{width:100%;padding:9px;background:#fff;color:#000;border:1px solid #fff;font-weight:600}
+.gate-card button:hover{background:#e0e0e0}
+.gate-err{margin-top:10px;min-height:13px;font-size:10px;color:#ff9999}
+.gate-card.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(7px)}40%,60%{transform:translateX(7px)}}
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+
+<div class="stage">
+  <header class="hero">
+    <h1 class="title">Niche</h1>
+    <p class="sub grad">command center</p>
+    <div class="hero-actions">
+      <button class="icon-btn" id="refreshBtn" title="Refresh">↻</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="col col-left">
+      <div class="col-head">
+        <input id="search" placeholder="Search players…" type="search" style="font-size:11px;padding:4px 7px;border-radius:6px"/>
+      </div>
+      <div class="col-body" id="userList"></div>
+      <div class="col-foot" id="userCount">—</div>
+    </aside>
+
+    <main class="col col-center">
+      <div class="col-head">
+        <span class="col-label grad" id="targetLabel">No target selected</span>
+        <button class="sm" id="clearTarget">Clear</button>
+      </div>
+      <div class="col-body" id="cmdBody"></div>
+    </main>
+
+    <aside class="col col-right">
+      <div class="col-head"><span class="col-label grad">Target &amp; Log</span></div>
+      <div class="col-body" id="targetBody"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h2>Supabase</h2>
+    <p>Stored in this browser only. Pre-filled with the Niche project. Sessions + commands tables must exist.</p>
+    <div class="f"><label>Project URL</label><input id="cfgUrl"/></div>
+    <div class="f"><label>Anon key</label><input id="cfgKey"/></div>
+    <div class="f"><label>Sessions table</label><input id="cfgSessions" placeholder="niche_sessions"/></div>
+    <div class="f"><label>Commands table</label><input id="cfgCommands" placeholder="niche_commands"/></div>
+    <div class="modal-foot">
+      <button id="cfgCancel">Cancel</button>
+      <button class="primary" id="cfgSave">Connect</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="gate" id="gate">
+  <div class="gate-card" id="gateCard">
+    <h1 class="title grad">Niche</h1>
+    <p class="sub grad">command center</p>
+    <p class="gate-msg grad">Admin access required</p>
+    <input id="gatePass" type="password" placeholder="password" autocomplete="off"/>
+    <button id="gateBtn">Unlock</button>
+    <p class="gate-err" id="gateErr"></p>
+  </div>
+</div>
+
+<script>
+/* ────────── starfield ────────── */
+const canvas=document.getElementById('sky'),ctx=canvas.getContext('2d');
+let W=0,H=0,stars=[],shooters=[],nextSpawn=0;
+function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);buildStars();}
+function buildStars(){const t=Math.min(Math.round(W*H/9000),260);stars=Array.from({length:t},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.05+.25,base:Math.random()*.42+.12,amp:Math.random()*.36,phase:Math.random()*Math.PI*2,spd:.5+Math.random()*1.7}));}
+function spawnShooter(){const dir=Math.random()<.5?1:-1;const angle=(16+Math.random()*32)*Math.PI/180;const speed=7+Math.random()*9;shooters.push({x:dir===1?-140-Math.random()*260:W+140+Math.random()*260,y:-60+Math.random()*H*.6,vx:Math.cos(angle)*speed*dir,vy:Math.sin(angle)*speed,len:130+Math.random()*260,width:.8+Math.random()*1.5,life:0,maxLife:80+Math.random()*80});}
+function drawShooter(s){const mag=Math.hypot(s.vx,s.vy)||1,ux=s.vx/mag,uy=s.vy/mag,tx=s.x-ux*s.len,ty=s.y-uy*s.len,p=s.life/s.maxLife,a=Math.max(0,Math.min(1,p/.1)*Math.min(1,(1-p)/.4));if(a<=0)return;const g=ctx.createLinearGradient(s.x,s.y,tx,ty);g.addColorStop(0,`rgba(255,255,255,${.9*a})`);g.addColorStop(.25,`rgba(230,230,230,${.35*a})`);g.addColorStop(.6,`rgba(180,180,180,${.08*a})`);g.addColorStop(1,'rgba(150,150,150,0)');ctx.strokeStyle=g;ctx.lineWidth=s.width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(tx,ty);ctx.stroke();const hr=s.width*7,gl=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,hr);gl.addColorStop(0,`rgba(255,255,255,${.9*a})`);gl.addColorStop(.4,`rgba(220,220,230,${.25*a})`);gl.addColorStop(1,'rgba(180,180,180,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(s.x,s.y,hr,0,Math.PI*2);ctx.fill();}
+function loop(now){ctx.clearRect(0,0,W,H);const t=now*.001;for(const st of stars){const a=st.base+st.amp*Math.sin(t*st.spd+st.phase);if(a<=0)continue;ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.beginPath();ctx.arc(st.x,st.y,st.r,0,Math.PI*2);ctx.fill();}if(now>=nextSpawn){spawnShooter();if(Math.random()<.3)spawnShooter();nextSpawn=now+380+Math.random()*1000;}for(let i=shooters.length-1;i>=0;i--){const s=shooters[i];drawShooter(s);s.x+=s.vx;s.y+=s.vy;s.life++;if(s.life>s.maxLife||s.x<-520||s.x>W+520||s.y>H+520)shooters.splice(i,1);}requestAnimationFrame(loop);}
+addEventListener('resize',resize);resize();requestAnimationFrame(loop);
+
+/* ────────── config ────────── */
+const LS='niche.cmdcenter.cfg';
+const DEFAULT_CFG={
+  url:'https://qktxylpebbaqjqallizb.supabase.co',
+  key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrdHh5bHBlYmJhcWpxYWxsaXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MTYxNzgsImV4cCI6MjEwODk5MjE3OH0.pchAJ1YiZv-b1NRhKroinSVqKsTTybSJD8149kgIaw0',
+  sessions:'niche_sessions',
+  commands:'niche_commands',
+};
+let CFG=(()=>{try{return{...DEFAULT_CFG,...JSON.parse(localStorage.getItem(LS)||'{}')}}catch{return{...DEFAULT_CFG}}})();
+const persistCfg=()=>localStorage.setItem(LS,JSON.stringify(CFG));
+
+const $=s=>document.querySelector(s);
+const el=(t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!==undefined)n.textContent=x;return n;};
+let toastTimer;
+function toast(msg,kind){const t=$('#toast');t.textContent=msg;t.className='toast show'+(kind?' '+kind:'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='toast',3000);}
+
+/* ────────── API ────────── */
+async function api(path,opts={}) {
+  const url = `${CFG.url.replace(/\/+$/,'')}/rest/v1/${path}`;
+  const res = await fetch(url, { ...opts, headers: { apikey: CFG.key, Authorization: 'Bearer ' + CFG.key, 'Content-Type': 'application/json', Accept: 'application/json', ...(opts.headers || {}) } });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || res.statusText);
+  if (!text) return null;
+  try { return JSON.parse(text) } catch { return null }
+}
+
+/* ────────── state ────────── */
+const state = {
+  sessions: [],
+  selected: null,
+  search: '',
+  log: [],
+  onlineWindowMs: 45000,
+};
+
+/* ────────── profile ────────── */
+const profileCache = {}, profileInflight = {};
+const RBX_RELAY = 'https://api.allorigins.win/raw?url=';
+async function rbxFetch(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw 0;
+    return await r.json();
+  } catch {
+    const r = await fetch(RBX_RELAY + encodeURIComponent(url));
+    if (!r.ok) throw new Error('relay');
+    return await r.json();
+  }
+}
+async function fetchProfile(id) {
+  id = Number(id);
+  if (!id) return null;
+  if (profileCache[id]) return profileCache[id];
+  if (profileInflight[id]) return profileInflight[id];
+  const p = (async () => {
+    const o = { id, username: null, displayName: null, avatar: null };
+    try {
+      const j = await rbxFetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${id}&size=150x150&format=Png&isCircular=false`);
+      if (j?.data?.[0]?.imageUrl) o.avatar = j.data[0].imageUrl;
+    } catch {}
+    try {
+      const j = await rbxFetch(`https://users.roblox.com/v1/users/${id}`);
+      if (j?.name) o.username = j.name;
+      if (j?.displayName) o.displayName = j.displayName;
+    } catch {}
+    profileCache[id] = o;
+    delete profileInflight[id];
+    return o;
+  })();
+  profileInflight[id] = p;
+  return p;
+}
+
+/* ────────── sessions ────────── */
+async function loadSessions() {
+  try {
+    const data = await api(`${CFG.sessions}?select=*&order=last_seen.desc`);
+    const cutoff = Date.now() - 3600_000;
+    state.sessions = (Array.isArray(data) ? data : []).filter(s => {
+      const t = new Date(s.last_seen).getTime();
+      return isNaN(t) || t > cutoff;
+    });
+    state.sessions.forEach(s => fetchProfile(s.user_id).then(renderList).catch(() => {}));
+  } catch (e) {
+    toast('Load failed: '+e.message,'err');
+    state.sessions=[];
+  }
+  renderList();
+  renderTarget();
+  renderCommands();
+}
+
+const isOnline = s => s && s.last_seen && (Date.now() - new Date(s.last_seen).getTime() < state.onlineWindowMs);
+
+function renderList() {
+  const list = $('#userList');
+  list.innerHTML = '';
+  const q = state.search.toLowerCase();
+  let sessions = state.sessions;
+  if (q) sessions = sessions.filter(s => String(s.user_id).includes(q) || (s.username || '').toLowerCase().includes(q) || (s.display_name || '').toLowerCase().includes(q));
+  const online = sessions.filter(isOnline).length;
+  $('#userCount').textContent = `${online} online · ${sessions.length} total`;
+  if (!sessions.length) {
+    list.appendChild(el('div','empty',state.sessions.length?'no matches':'no players yet — inject the script in-game'));
+    return;
+  }
+  sessions.forEach(s => {
+    const p = profileCache[s.user_id] || {};
+    const item = el('div','user-item'+(state.selected===s.user_id?' active':'')+(isOnline(s)?'':' offline'));
+    const av = document.createElement('img');
+    av.className = 'av';
+    av.alt = '';
+    av.src = p.avatar || '';
+    av.onerror = () => { av.style.opacity = '0' };
+    const meta = el('div','meta');
+    meta.appendChild(el('div','nm',s.display_name||s.username||p.displayName||p.username||('User '+s.user_id)));
+    meta.appendChild(el('div','sub','@'+(s.username||p.username||'?')+' · '+s.user_id));
+    const dot = el('div','live-dot'+(isOnline(s)?'':' off'));
+    item.append(av,meta,dot);
+    item.onclick = () => { state.selected = s.user_id; renderList(); renderTarget(); renderCommands(); };
+    list.appendChild(item);
+  });
+}
+
+/* ────────── command catalog ────────── */
+const CATALOG = [
+  {cat:'Moderation',cmds:[
+    {id:'kick',name:'Kick',desc:'Remove from game',danger:true,args:[{k:'reason',l:'Reason',t:'text',def:'Kicked by admin'}]},
+    {id:'client_kick',name:'Client Kick',desc:'Kick from their own client',danger:true},
+    {id:'warn',name:'Warn',desc:'Show a warning popup',args:[{k:'message',l:'Message',t:'text',def:'Warning from admin'}]},
+    {id:'freeze',name:'Freeze',desc:'Toggle freeze',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'Freeze'},{v:'false',l:'Unfreeze'}],def:'true'}]},
+    {id:'ban',name:'Ban',desc:'Kick + log ban flag',danger:true,args:[{k:'reason',l:'Reason',t:'text',def:'Banned'}]},
+    {id:'blind',name:'Blind',desc:'Black out their screen',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'On'},{v:'false',l:'Off'}],def:'true'}]},
+  ]},
+  {cat:'Movement',cmds:[
+    {id:'teleport_to',name:'Bring to me',desc:'Teleport to your HRP'},
+    {id:'goto',name:'Send to me',desc:'Alias of bring-to'},
+    {id:'teleport_pos',name:'Teleport coords',desc:'Set position',args:[{k:'x',l:'X',t:'number',def:0},{k:'y',l:'Y',t:'number',def:10},{k:'z',l:'Z',t:'number',def:0}]},
+    {id:'teleport_to_user',name:'Teleport to user',desc:'To another player by UserId',args:[{k:'target',l:'UserId',t:'number',def:0}]},
+    {id:'speed',name:'WalkSpeed',desc:'Set walkspeed',args:[{k:'value',l:'Speed',t:'number',def:16,min:0,max:500}]},
+    {id:'jump',name:'JumpPower',desc:'Set jump power',args:[{k:'value',l:'Power',t:'number',def:50,min:0,max:500}]},
+    {id:'fly',name:'Fly',desc:'Toggle flight',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'On'},{v:'false',l:'Off'}],def:'true'}]},
+    {id:'noclip',name:'Noclip',desc:'Toggle noclip',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'On'},{v:'false',l:'Off'}],def:'true'}]},
+    {id:'anchor',name:'Anchor',desc:'Anchor / unanchor HRP',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'Anchor'},{v:'false',l:'Unanchor'}],def:'true'}]},
+    {id:'throw',name:'Launch',desc:'Launch upward',args:[{k:'power',l:'Power',t:'number',def:100,min:0,max:1000}]},
+    {id:'spin',name:'Spin',desc:'Spin the character',args:[{k:'speed',l:'Speed',t:'number',def:10,min:-200,max:200}]},
+  ]},
+  {cat:'Appearance',cmds:[
+    {id:'size_scale',name:'Size',desc:'Scale whole character',args:[{k:'scale',l:'Scale',t:'number',def:1.5,min:0.1,max:10,step:0.1}]},
+    {id:'head_size',name:'Head size',desc:'Scale head only',args:[{k:'scale',l:'Scale',t:'number',def:2,min:0.1,max:10,step:0.1}]},
+    {id:'torso_size',name:'Torso size',desc:'Scale torso only',args:[{k:'scale',l:'Scale',t:'number',def:2,min:0.1,max:10,step:0.1}]},
+    {id:'invisible',name:'Invisibility',desc:'Hide / show character',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'Hide'},{v:'false',l:'Show'}],def:'true'}]},
+    {id:'rainbow',name:'Rainbow',desc:'Cycle body colors',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'On'},{v:'false',l:'Off'}],def:'true'}]},
+    {id:'color',name:'Body color',desc:'Set all parts color',args:[{k:'hex',l:'Hex',t:'text',def:'#ff0000'}]},
+    {id:'outfit',name:'Outfit ID',desc:'Apply an outfit by ID',args:[{k:'id',l:'Outfit ID',t:'number',def:0}]},
+  ]},
+  {cat:'Combat',cmds:[
+    {id:'kill',name:'Kill',desc:'Break the character',danger:true},
+    {id:'heal',name:'Heal',desc:'Restore full health'},
+    {id:'god',name:'Godmode',desc:'Toggle invincibility',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'On'},{v:'false',l:'Off'}],def:'true'}]},
+    {id:'ff',name:'ForceField',desc:'Toggle forcefield',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'On'},{v:'false',l:'Off'}],def:'true'}]},
+    {id:'damage',name:'Damage',desc:'Deal damage',args:[{k:'amount',l:'Amount',t:'number',def:25,min:1,max:100000}]},
+  ]},
+  {cat:'Inventory',cmds:[
+    {id:'give_tool',name:'Give tool',desc:'Insert a tool by asset ID',args:[{k:'asset',l:'Asset ID',t:'number',def:0}]},
+    {id:'clear_tools',name:'Clear backpack',desc:'Remove all tools',danger:true},
+    {id:'drop_tools',name:'Drop all tools',desc:'Drop held tools'},
+  ]},
+  {cat:'Camera',cmds:[
+    {id:'lock_camera',name:'Lock camera',desc:'Freeze their camera',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'Lock'},{v:'false',l:'Unlock'}],def:'true'}]},
+    {id:'zoom',name:'Zoom',desc:'Set field of view',args:[{k:'fov',l:'FOV',t:'number',def:70,min:20,max:120}]},
+    {id:'shake',name:'Shake camera',desc:'Shake their camera',args:[{k:'intensity',l:'Intensity',t:'number',def:1,min:0.1,max:5,step:0.1}]},
+  ]},
+  {cat:'Utility',cmds:[
+    {id:'notify',name:'Notify',desc:'Toast notification',args:[{k:'message',l:'Message',t:'text',def:'Hello'}]},
+    {id:'set_name',name:'Set display name',desc:'Override their nametag',args:[{k:'name',l:'Name',t:'text',def:'Admin'}]},
+    {id:'mute',name:'Mute',desc:'Toggle chat mute',args:[{k:'state',l:'State',t:'select',opts:[{v:'true',l:'Mute'},{v:'false',l:'Unmute'}],def:'true'}]},
+    {id:'respawn',name:'Respawn',desc:'Force respawn'},
+    {id:'reset',name:'Reset all',desc:'Reset all state flags',danger:true},
+  ]},
+];
+
+/* ────────── helpers ────────── */
+function renderTarget() {
+  const body = $('#targetBody');
+  body.innerHTML = '';
+  if (!state.selected) return;
+
+  const s = state.sessions.find(ss => ss.user_id === state.selected);
+  if (!s) return;
+
+  const p = profileCache[state.selected] || {};
+  const pill = el('div','target-pill');
+  const av = document.createElement('img');
+  av.className = 'av';
+  av.src = p.avatar || '';
+  av.onerror = () => { av.style.opacity = '0' };
+  const meta = el('div','meta');
+  meta.appendChild(el('div','nm',s.display_name||s.username||p.displayName||p.username||('User '+state.selected)));
+  meta.appendChild(el('div','sub','@'+(s.username||p.username||'?')+' · '+state.selected));
+  pill.append(av,meta);
+  body.appendChild(pill);
+
+  const cmds = CATALOG.reduce((arr,cat)=>arr.concat(cat.cmds),[]);
+  cmds.forEach(cmd => {
+    const btn = el('button','cmd-btn'+(cmd.danger?' danger':''));
+    btn.innerHTML = `<div class="cn">${cmd.name}</div><div class="cd">${cmd.desc}</div>`;
+    btn.onclick = () => runCommand(cmd);
+    body.appendChild(btn);
+  });
+}
+
+function runCommand(cmd) {
+  if (!state.selected) return;
+  api(`${CFG.commands}?on_conflict=command,executed_at,target_id`, {
+    method: 'POST',
+    body: JSON.stringify({
+      command: cmd.id,
+      args: cmd.args ? Object.fromEntries(cmd.args.map(a => [a.k, a.def])) : {},
+      target_id: state.selected
+    })
+  }).then(() => {
+    toast(cmd.name+' sent');
+    renderTarget();
+  }).catch(e => toast('Failed: '+e.message,'err'));
+}
+
+/* ────────── commands panel ────────── */
+function renderCommands() {
+  const body = $('#cmdBody');
+  body.innerHTML = '';
+  const cmds = CATALOG.reduce((arr,cat)=>arr.concat(cat.cmds),[]);
+  cmds.forEach(cmd => {
+    const btn = el('button','cmd-btn'+(cmd.danger?' danger':''));
+    btn.innerHTML = `<div class="cn">${cmd.name}</div><div class="cd">${cmd.desc}</div>`;
+    btn.onclick = () => runCommand(cmd);
+    body.appendChild(btn);
+  });
+}
+
+/* ────────── broadcast ────────── */
+async function broadcastCommand() {
+  const cmds = CATALOG.reduce((arr,cat)=>arr.concat(cat.cmds),[]);
+  if (!cmds.length) return;
+  const cmd = cmds[Math.floor(Math.random()*cmds.length)];
+  api(`${CFG.commands}?on_conflict=command,executed_at`, {
+    method: 'POST',
+    body: JSON.stringify({
+      command: cmd.id,
+      args: cmd.args ? Object.fromEntries(cmd.args.map(a => [a.k, a.def])) : {},
+      target_id: null
+    })
+  }).then(() => toast('Broadcast '+cmd.name));
+}
+
+/* ────────── log ────────── */
+async function loadLog() {
+  const data = await api(`${CFG.commands}?select=*&order=executed_at.desc&limit=15`);
+  const logEl = $('#targetBody');
+  logEl.innerHTML = '';
+  if (!Array.isArray(data) || !data.length) {
+    logEl.appendChild(el('div','empty','no commands yet'));
+    return;
+  }
+  data.forEach(row => {
+    const div = el('div','log .l');
+    div.innerHTML = `<span class="t">${new Date(row.executed_at).toLocaleTimeString()}</span><span class="m ${row.result==='ok'?'ok':row.result?.startsWith('err')?'err':'info'}">${row.command} ${row.result||''}</span>`;
+    logEl.appendChild(div);
+  });
+}
+
+/* ────────── settings ────────── */
+function setupSettings() {
+  const modal = $('#modal');
+  const pass = $('#gatePass');
+  const err = $('#gateErr');
+
+  $('#settingsBtn').onclick = () => {
+    $('#cfgUrl').value = CFG.url;
+    $('#cfgKey').value = CFG.key;
+    $('#cfgSessions').value = CFG.sessions;
+    $('#cfgCommands').value = CFG.commands;
+    modal.classList.add('show');
+  };
+
+  $('#cfgCancel').onclick = () => modal.classList.remove('show');
+  $('#cfgSave').onclick = () => {
+    CFG.url = $('#cfgUrl').value.trim();
+    CFG.key = $('#cfgKey').value.trim();
+    CFG.sessions = $('#cfgSessions').value.trim() || 'niche_sessions';
+    CFG.commands = $('#cfgCommands').value.trim() || 'niche_commands';
+    persistCfg();
+    modal.classList.remove('show');
+    loadSessions();
+    toast('Settings saved');
+  };
+
+  // Gate
+  $('#gateBtn').onclick = () => {
+    if (pass.value === 'admin') {
+      $('#gate').classList.add('hidden');
+      pass.value = '';
+      err.textContent = '';
+    } else {
+      err.textContent = 'Wrong password';
+      $('#gateCard').classList.add('shake');
+      setTimeout(() => $('#gateCard').classList.remove('shake'), 400);
+    }
+  };
+
+  pass.onkeypress = e => { if (e.key === 'Enter') $('#gateBtn').click(); };
+}
+
+/* ────────── init ────────── */
+window.onload = () => {
+  $('#refreshBtn').onclick = loadSessions;
+  setupSettings();
+  loadSessions();
+  setInterval(loadSessions, 45000);
+  setInterval(loadLog, 8000);
+  broadcastCommand(); // demo broadcast
+};
+</script>
+</body>
+</html>
