@@ -512,7 +512,6 @@
     let attemptCount = 0;
     const MAX_ATTEMPTS = 3;
 
-    // Create password modal
     const passwordModal = document.createElement('div');
     passwordModal.style.position = 'fixed';
     passwordModal.style.inset = '0';
@@ -565,10 +564,7 @@
       }
     };
 
-    // Auto-unlock if already unlocked
-    if (localStorage.getItem('diaryUnlocked') === 'true') {
-      isUnlocked = true;
-    }
+    if (localStorage.getItem('diaryUnlocked') === 'true') isUnlocked = true;
 
     // ---- SUPABASE CONFIG ----
     const SUPABASE_URL = "https://ttkleixgzlhoxqaajrsf.supabase.co";
@@ -587,34 +583,22 @@
     const formStatus = document.getElementById('formStatus');
     const headerStatus = document.getElementById('headerStatus');
 
-    // ---- STATE ----
     let currentEntries = [];
 
-    // ---- UTILITY: show status message ----
     function showStatus(message, isError = false) {
       formStatus.textContent = message;
       formStatus.style.display = 'inline-block';
       formStatus.classList.toggle('status-error', isError);
       clearTimeout(window.statusTimeout);
-      window.statusTimeout = setTimeout(() => {
-        formStatus.style.display = 'none';
-      }, 4200);
+      window.statusTimeout = setTimeout(() => formStatus.style.display = 'none', 4200);
     }
 
-    // ---- UTILITY: format date ----
     function formatDate(dateString) {
       if (!dateString) return 'just now';
       const d = new Date(dateString);
-      return d.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
-    // ---- UTILITY: get file type icon/preview ----
     function createMediaPreview(fileType, fileUrl, fileName) {
       if (!fileUrl) return null;
       const container = document.createElement('div');
@@ -622,27 +606,20 @@
       const mainType = fileType ? fileType.split('/')[0] : '';
       if (mainType === 'image') {
         const img = document.createElement('img');
-        img.src = fileUrl;
-        img.alt = fileName || 'image';
-        img.loading = 'lazy';
+        img.src = fileUrl; img.alt = fileName || 'image'; img.loading = 'lazy';
         container.appendChild(img);
       } else if (mainType === 'video') {
         const video = document.createElement('video');
-        video.src = fileUrl;
-        video.controls = true;
-        video.preload = 'metadata';
-        video.style.maxWidth = '100%';
-        video.style.maxHeight = '152px';
+        video.src = fileUrl; video.controls = true; video.preload = 'metadata';
+        video.style.maxWidth = '100%'; video.style.maxHeight = '152px';
         container.appendChild(video);
       } else if (mainType === 'audio' || (fileName && fileName.endsWith('.mp3'))) {
         const audio = document.createElement('audio');
-        audio.src = fileUrl;
-        audio.controls = true;
+        audio.src = fileUrl; audio.controls = true;
         container.appendChild(audio);
       } else {
         const link = document.createElement('a');
-        link.href = fileUrl;
-        link.target = '_blank';
+        link.href = fileUrl; link.target = '_blank';
         link.textContent = fileName || 'download file';
         link.style.padding = '0.55rem 1.1rem';
         link.style.display = 'inline-block';
@@ -653,7 +630,6 @@
       return container;
     }
 
-    // ---- FETCH ENTRIES ----
     async function fetchEntries() {
       try {
         const { data, error } = await supabaseClient
@@ -676,7 +652,6 @@
       }
     }
 
-    // ---- UPLOAD FILE ----
     async function uploadFile(file) {
       if (!file) return null;
       const fileExt = file.name.split('.').pop();
@@ -684,17 +659,17 @@
       const filePath = `diary/${fileName}`;
       const { data, error } = await supabaseClient
         .storage
-        .from('diary_media')
+        .from('Diary_Media')   // <-- FIXED BUCKET NAME (case-sensitive)
         .upload(filePath, file, { cacheControl: '3600', upsert: false });
       if (error) {
         if (error.message.includes('bucket')) {
-          throw new Error('Storage bucket "diary_media" not found. Please create it in Supabase Storage.');
+          throw new Error('Storage bucket "Diary_Media" not found. Please create it in Supabase Storage.');
         }
         throw error;
       }
       const { data: urlData } = supabaseClient
         .storage
-        .from('diary_media')
+        .from('Diary_Media')
         .getPublicUrl(filePath);
       return {
         path: filePath,
@@ -705,7 +680,6 @@
       };
     }
 
-    // ---- SAVE ENTRY ----
     async function saveEntry(entryData) {
       const { data, error } = await supabaseClient
         .from('diary_entries')
@@ -715,7 +689,6 @@
       return data[0];
     }
 
-    // ---- DELETE ENTRY ----
     async function deleteEntry(entryId, filePath) {
       if (!confirm('Delete this entry permanently?')) return;
       try {
@@ -727,11 +700,9 @@
         if (filePath) {
           const { error: storageError } = await supabaseClient
             .storage
-            .from('diary_media')
+            .from('Diary_Media')
             .remove([filePath]);
-          if (storageError) {
-            console.warn('Could not delete file from storage:', storageError.message);
-          }
+          if (storageError) console.warn('Could not delete file:', storageError.message);
         }
         await renderEntries();
         showStatus('Entry deleted.');
@@ -741,17 +712,12 @@
       }
     }
 
-    // ---- RENDER ENTRIES (with animation) ----
     async function renderEntries() {
       entriesContainer.innerHTML = '<div class="empty-state" style="opacity:0.6;"><span class="loading-spinner"></span> loading entries…</div>';
       currentEntries = await fetchEntries();
       entryCountSpan.textContent = currentEntries.length;
       if (!currentEntries.length) {
-        entriesContainer.innerHTML = `
-          <div class="empty-state" id="emptyState">
-            no entries yet — add your first memory ✨
-          </div>
-        `;
+        entriesContainer.innerHTML = `<div class="empty-state" id="emptyState">no entries yet — add your first memory ✨</div>`;
         return;
       }
       entriesContainer.innerHTML = '';
@@ -759,66 +725,40 @@
         const card = document.createElement('div');
         card.className = 'entry-card';
         card.style.animationDelay = `${index * 0.06}s`;
-        // ----- content side -----
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'entry-content';
-        const titleEl = document.createElement('div');
-        titleEl.className = 'entry-title';
-        titleEl.textContent = entry.title || 'untitled';
+        const contentDiv = document.createElement('div'); contentDiv.className = 'entry-content';
+        const titleEl = document.createElement('div'); titleEl.className = 'entry-title'; titleEl.textContent = entry.title || 'untitled';
         contentDiv.appendChild(titleEl);
         if (entry.note) {
-          const noteEl = document.createElement('div');
-          noteEl.className = 'entry-note';
-          noteEl.textContent = entry.note;
+          const noteEl = document.createElement('div'); noteEl.className = 'entry-note'; noteEl.textContent = entry.note;
           contentDiv.appendChild(noteEl);
         }
-        const dateEl = document.createElement('div');
-        dateEl.className = 'entry-date';
-        dateEl.textContent = formatDate(entry.created_at);
+        const dateEl = document.createElement('div'); dateEl.className = 'entry-date'; dateEl.textContent = formatDate(entry.created_at);
         contentDiv.appendChild(dateEl);
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'delete';
-        deleteBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteEntry(entry.id, entry.file_path);
-        });
+        const deleteBtn = document.createElement('button'); deleteBtn.className = 'delete-btn'; deleteBtn.textContent = 'delete';
+        deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteEntry(entry.id, entry.file_path); });
         contentDiv.appendChild(deleteBtn);
-        // ----- media side -----
-        const mediaDiv = document.createElement('div');
-        mediaDiv.className = 'entry-media';
+
+        const mediaDiv = document.createElement('div'); mediaDiv.className = 'entry-media';
         if (entry.file_url) {
           const preview = createMediaPreview(entry.file_type, entry.file_url, entry.file_name);
           if (preview) mediaDiv.appendChild(preview);
-          const fileInfo = document.createElement('div');
-          fileInfo.className = 'file-info';
-          const nameSpan = document.createElement('span');
-          nameSpan.textContent = entry.file_name || 'file';
-          nameSpan.style.maxWidth = '180px';
-          nameSpan.style.overflow = 'hidden';
-          nameSpan.style.textOverflow = 'ellipsis';
-          nameSpan.style.whiteSpace = 'nowrap';
+          const fileInfo = document.createElement('div'); fileInfo.className = 'file-info';
+          const nameSpan = document.createElement('span'); nameSpan.textContent = entry.file_name || 'file';
+          nameSpan.style.maxWidth = '180px'; nameSpan.style.overflow = 'hidden'; nameSpan.style.textOverflow = 'ellipsis'; nameSpan.style.whiteSpace = 'nowrap';
           fileInfo.appendChild(nameSpan);
-          const link = document.createElement('a');
-          link.href = entry.file_url;
-          link.target = '_blank';
-          link.textContent = 'open';
+          const link = document.createElement('a'); link.href = entry.file_url; link.target = '_blank'; link.textContent = 'open';
           fileInfo.appendChild(link);
           mediaDiv.appendChild(fileInfo);
         } else {
-          const noFile = document.createElement('div');
-          noFile.style.fontSize = '0.78rem';
-          noFile.style.color = '#777';
+          const noFile = document.createElement('div'); noFile.style.fontSize = '0.78rem'; noFile.style.color = '#777';
           noFile.textContent = 'no attachment';
           mediaDiv.appendChild(noFile);
         }
-        card.appendChild(contentDiv);
-        card.appendChild(mediaDiv);
+        card.appendChild(contentDiv); card.appendChild(mediaDiv);
         entriesContainer.appendChild(card);
       });
     }
 
-    // ---- HANDLE UPLOAD ----
     async function handleUpload() {
       const title = titleInput.value.trim();
       const note = noteInput.value.trim();
@@ -833,11 +773,7 @@
       try {
         let fileData = null;
         if (file) {
-          try {
-            fileData = await uploadFile(file);
-          } catch (err) {
-            throw new Error('File upload failed: ' + err.message);
-          }
+          try { fileData = await uploadFile(file); } catch (err) { throw new Error('File upload failed: ' + err.message); }
         }
         const entry = {
           title: title || null,
@@ -849,9 +785,7 @@
           file_size: fileData ? fileData.size : null,
         };
         await saveEntry(entry);
-        titleInput.value = '';
-        noteInput.value = '';
-        fileInput.value = '';
+        titleInput.value = ''; noteInput.value = ''; fileInput.value = '';
         await renderEntries();
         showStatus('✓ entry saved!');
       } catch (err) {
@@ -863,18 +797,10 @@
       }
     }
 
-    // ---- INITIALIZE ----
     async function init() {
-      // First show password modal (modern locked experience)
       showPasswordModal();
-
       uploadBtn.addEventListener('click', handleUpload);
-      titleInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleUpload();
-        }
-      });
+      titleInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleUpload(); } });
     }
 
     init();
