@@ -1,0 +1,885 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>swip · media diary</title>
+  <!-- supabase js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ----- global reset & fonts ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    :root {
+      --bg: #f5f5f5;
+      --surface: #ffffff;
+      --surface-soft: #f8f8f8;
+      --border-light: #e5e5e5;
+      --border-medium: #d1d1d1;
+      --text-primary: #1a1a1a;
+      --text-secondary: #444444;
+      --text-muted: #777777;
+      --accent: #1a1a1a;
+      --accent-hover: #0f0f0f;
+      --accent-press: #e5e5e5;
+      --radius-card: 24px;
+      --radius-btn: 9999px;
+      --radius-pill: 9999px;
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-heading: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font);
+      padding: 2rem 1.5rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .app {
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    /* ----- header modern ----- */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border-medium);
+      padding-bottom: 1rem;
+      transition: border-color var(--transition);
+    }
+    header:hover {
+      border-color: var(--accent);
+    }
+    h1 {
+      font-size: 2.35rem;
+      font-weight: 400;
+      letter-spacing: -0.6px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-heading);
+    }
+    h1 .diary-emoji {
+      display: inline-block;
+      font-size: 2.1rem;
+      animation: float 3.5s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    h1 span {
+      background: var(--accent-press);
+      padding: 0.2rem 0.9rem;
+      border-radius: var(--radius-pill);
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--text-primary);
+      margin-left: 0.75rem;
+      vertical-align: middle;
+      letter-spacing: 0.25px;
+    }
+    .supabase-badge {
+      background: #f0f0f0;
+      padding: 0.4rem 1.1rem;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    .supabase-badge:hover {
+      background: #e5e5e5;
+      transform: translateY(-1px);
+    }
+    .supabase-badge i {
+      font-style: normal;
+      font-size: 1.1rem;
+    }
+
+    /* ----- form card (glass + modern) ----- */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .entry-form {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: 2.2rem 2.4rem;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 2.8rem;
+      border: 1px solid var(--border-light);
+      backdrop-filter: blur(12px);
+      animation: fadeUp 0.6s ease both;
+      transition: all var(--transition);
+    }
+    .entry-form:hover {
+      border-color: var(--border-medium);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.07);
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      align-items: flex-end;
+      margin-bottom: 1.3rem;
+    }
+    .form-group {
+      flex: 1 1 220px;
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      margin-bottom: 0.45rem;
+      font-weight: 500;
+    }
+    input[type="text"],
+    textarea,
+    input[type="file"] {
+      width: 100%;
+      padding: 0.92rem 1.35rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border-light);
+      background: #fafafa;
+      font-size: 1rem;
+      transition: all var(--transition);
+      outline: none;
+      font-family: var(--font);
+    }
+    input[type="text"]:focus,
+    textarea:focus,
+    input[type="file"]:focus {
+      border-color: var(--accent);
+      background: var(--surface);
+      box-shadow: 0 0 0 4px rgba(26, 26, 26, 0.12);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 78px;
+    }
+    .file-hint {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      margin-left: 0.35rem;
+    }
+
+    /* ----- buttons ----- */
+    .btn {
+      border: none;
+      background: var(--accent);
+      color: white;
+      padding: 0.92rem 2.25rem;
+      border-radius: var(--radius-btn);
+      font-weight: 500;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn:disabled {
+      background: #b7b7b7;
+      cursor: not-allowed;
+      opacity: 0.75;
+      transform: none;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-medium);
+      color: var(--text-primary);
+    }
+    .btn-outline:hover {
+      background: #f5f5f5;
+      border-color: var(--accent);
+    }
+
+    /* ----- entries ----- */
+    .entries-section h2 {
+      font-size: 1.35rem;
+      font-weight: 400;
+      color: var(--text-primary);
+      margin-bottom: 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      font-family: var(--font-heading);
+    }
+    .entries-section h2 span {
+      background: var(--accent-press);
+      font-size: 0.85rem;
+      padding: 0.18rem 0.95rem;
+      border-radius: var(--radius-pill);
+      color: var(--text-primary);
+    }
+    .entries-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.6rem;
+    }
+
+    /* ----- entry cards modern ----- */
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(18px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .entry-card {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: 1.6rem 1.9rem;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.6rem;
+      align-items: flex-start;
+      transition: all var(--transition);
+      animation: cardEnter 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .entry-card:hover {
+      border-color: var(--border-medium);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+      transform: translateY(-3px);
+    }
+    .entry-content {
+      flex: 2 1 300px;
+    }
+    .entry-media {
+      flex: 1 1 230px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .entry-title {
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: var(--text-primary);
+      margin-bottom: 0.55rem;
+      word-break: break-word;
+      letter-spacing: -0.25px;
+    }
+    .entry-note {
+      font-size: 0.98rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.65;
+    }
+    .entry-date {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.35px;
+      text-transform: uppercase;
+      margin-top: 0.6rem;
+    }
+    .media-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 0.55rem;
+    }
+    .media-thumb {
+      background: #f8f8f8;
+      border-radius: 18px;
+      overflow: hidden;
+      max-width: 100%;
+      border: 1px solid var(--border-light);
+      transition: all 0.2s ease;
+    }
+    .media-thumb:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+    .media-thumb img,
+    .media-thumb video {
+      display: block;
+      max-width: 100%;
+      max-height: 152px;
+      width: auto;
+      height: auto;
+    }
+    .media-thumb audio {
+      display: block;
+      width: 190px;
+      height: 44px;
+      background: #f8f8f8;
+    }
+    .file-info {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      word-break: break-all;
+      background: #f5f5f5;
+      padding: 0.35rem 1rem;
+      border-radius: 9999px;
+      transition: all 0.2s ease;
+    }
+    .file-info:hover {
+      background: #e5e5e5;
+    }
+    .file-info a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+    .file-info a:hover {
+      color: var(--accent-hover);
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3.2rem 2rem;
+      background: var(--surface-soft);
+      border-radius: 32px;
+      color: var(--text-muted);
+      font-style: italic;
+      border: 1px dashed var(--border-medium);
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    /* ----- status ----- */
+    .status-message {
+      font-size: 0.87rem;
+      padding: 0.55rem 1.35rem;
+      border-radius: 9999px;
+      margin-top: 0.9rem;
+      background: var(--surface);
+      color: var(--text-primary);
+      display: inline-block;
+      transition: opacity 0.3s ease;
+      animation: fadeUp 0.2s ease both;
+    }
+    .status-error {
+      background: #f5e0dc;
+      color: #9b3a2b;
+    }
+
+    /* ----- spinner ----- */
+    .loading-spinner {
+      display: inline-block;
+      width: 1.05rem;
+      height: 1.05rem;
+      border: 2.2px solid #b7b7b7;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ----- delete button ----- */
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 0.55rem;
+      transition: all 0.15s ease;
+      font-family: var(--font);
+    }
+    .delete-btn:hover {
+      color: #e06c6c;
+      transform: scale(1.07);
+    }
+
+    /* ----- footer ----- */
+    .footer-note {
+      margin-top: 3.2rem;
+      font-size: 0.73rem;
+      text-align: center;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-medium);
+      padding-top: 1.6rem;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    /* responsive */
+    @media (max-width: 600px) {
+      body { padding: 1.5rem 1rem; }
+      h1 { font-size: 1.95rem; }
+      .entry-form { padding: 1.7rem; }
+      .entry-card { padding: 1.35rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>
+      <span class="diary-emoji">📔</span> media diary
+      <span id="headerStatus">private</span>
+    </h1>
+    <div class="supabase-badge">
+      <i>⚡</i> supabase storage + db
+    </div>
+  </header>
+
+  <!-- entry form -->
+  <div class="entry-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="title">title</label>
+        <input type="text" id="title" placeholder="e.g. morning walk" maxlength="120">
+      </div>
+      <div class="form-group">
+        <label for="note">note / description</label>
+        <textarea id="note" placeholder="write something..." rows="2"></textarea>
+      </div>
+    </div>
+    <div class="form-row" style="align-items: center;">
+      <div class="form-group" style="flex: 3;">
+        <label for="fileInput">attach media (image, video, mp3, any file)</label>
+        <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.txt,.zip,.doc,.docx,etc">
+        <div class="file-hint">max 40MB per file · stored in supabase storage</div>
+      </div>
+      <div style="flex: 1; min-width: 140px; text-align: right;">
+        <button class="btn" id="uploadBtn">
+          ✦ save entry
+        </button>
+      </div>
+    </div>
+    <div id="formStatus" class="status-message" style="display: none;"></div>
+  </div>
+
+  <!-- entries list -->
+  <div class="entries-section">
+    <h2>
+      📦 your entries
+      <span id="entryCount">0</span>
+    </h2>
+    <div id="entriesContainer" class="entries-grid">
+      <!-- dynamic entries will appear here -->
+      <div class="empty-state" id="emptyState">
+        no entries yet — add your first memory ✨
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    diary entries are stored in your supabase project · all media files live in storage
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ---- PASSWORD PROTECTED ACCESS (swippingvins) -----
+    let isUnlocked = false;
+    let attemptCount = 0;
+    const MAX_ATTEMPTS = 3;
+
+    // Create password modal
+    const passwordModal = document.createElement('div');
+    passwordModal.style.position = 'fixed';
+    passwordModal.style.inset = '0';
+    passwordModal.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
+    passwordModal.style.display = 'flex';
+    passwordModal.style.alignItems = 'center';
+    passwordModal.style.justifyContent = 'center';
+    passwordModal.style.zIndex = '9999';
+    passwordModal.style.opacity = '0';
+    passwordModal.style.transition = 'opacity 0.3s ease';
+    passwordModal.innerHTML = `
+      <div style="background: white; border-radius: 24px; padding: 2.5rem 2rem; width: 92%; max-width: 380px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25); text-align: center;">
+        <h2 style="font-size: 1.65rem; margin-bottom: 0.6rem; color: #1a1a1a;">media diary</h2>
+        <p style="color: #555; margin-bottom: 1.8rem;">enter the password to continue</p>
+        <input type="password" id="passwordInput" placeholder="••••••••" style="width: 100%; padding: 1rem; border-radius: 9999px; border: 1px solid #d1d1d1; font-size: 1rem; text-align: center; margin-bottom: 1.2rem;">
+        <button onclick="submitPassword()" style="width: 100%; padding: 0.95rem; background: #1a1a1a; color: white; border: none; border-radius: 9999px; font-weight: 500; cursor: pointer;">unlock</button>
+        <div id="pwError" style="margin-top: 1rem; color: #e06c6c; font-size: 0.85rem; display: none;">wrong password</div>
+      </div>
+    `;
+    document.body.appendChild(passwordModal);
+
+    function showPasswordModal() {
+      passwordModal.style.display = 'flex';
+      setTimeout(() => passwordModal.style.opacity = '1', 10);
+      document.getElementById('passwordInput').focus();
+    }
+
+    window.submitPassword = function() {
+      const input = document.getElementById('passwordInput').value;
+      const errorEl = document.getElementById('pwError');
+      attemptCount++;
+
+      if (input === 'swippingvins') {
+        isUnlocked = true;
+        passwordModal.style.opacity = '0';
+        setTimeout(() => {
+          passwordModal.style.display = 'none';
+          document.querySelector('.app').style.opacity = '1';
+        }, 300);
+        localStorage.setItem('diaryUnlocked', 'true');
+      } else {
+        errorEl.style.display = 'block';
+        errorEl.textContent = `wrong password — ${MAX_ATTEMPTS - attemptCount} tries left`;
+        if (attemptCount >= MAX_ATTEMPTS) {
+          setTimeout(() => {
+            alert('too many wrong attempts. try again later.');
+            window.location.reload();
+          }, 800);
+        }
+      }
+    };
+
+    // Auto-unlock if already unlocked
+    if (localStorage.getItem('diaryUnlocked') === 'true') {
+      isUnlocked = true;
+    }
+
+    // ---- SUPABASE CONFIG ----
+    const SUPABASE_URL = "https://ttkleixgzlhoxqaajrsf.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_ppVX5OBdyHzlhkvji8o-Gw_ulH4WHBq";
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ---- DOM ELEMENTS ----
+    const titleInput = document.getElementById('title');
+    const noteInput = document.getElementById('note');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const entriesContainer = document.getElementById('entriesContainer');
+    const emptyState = document.getElementById('emptyState');
+    const entryCountSpan = document.getElementById('entryCount');
+    const formStatus = document.getElementById('formStatus');
+    const headerStatus = document.getElementById('headerStatus');
+
+    // ---- STATE ----
+    let currentEntries = [];
+
+    // ---- UTILITY: show status message ----
+    function showStatus(message, isError = false) {
+      formStatus.textContent = message;
+      formStatus.style.display = 'inline-block';
+      formStatus.classList.toggle('status-error', isError);
+      clearTimeout(window.statusTimeout);
+      window.statusTimeout = setTimeout(() => {
+        formStatus.style.display = 'none';
+      }, 4200);
+    }
+
+    // ---- UTILITY: format date ----
+    function formatDate(dateString) {
+      if (!dateString) return 'just now';
+      const d = new Date(dateString);
+      return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // ---- UTILITY: get file type icon/preview ----
+    function createMediaPreview(fileType, fileUrl, fileName) {
+      if (!fileUrl) return null;
+      const container = document.createElement('div');
+      container.className = 'media-thumb';
+      const mainType = fileType ? fileType.split('/')[0] : '';
+      if (mainType === 'image') {
+        const img = document.createElement('img');
+        img.src = fileUrl;
+        img.alt = fileName || 'image';
+        img.loading = 'lazy';
+        container.appendChild(img);
+      } else if (mainType === 'video') {
+        const video = document.createElement('video');
+        video.src = fileUrl;
+        video.controls = true;
+        video.preload = 'metadata';
+        video.style.maxWidth = '100%';
+        video.style.maxHeight = '152px';
+        container.appendChild(video);
+      } else if (mainType === 'audio' || (fileName && fileName.endsWith('.mp3'))) {
+        const audio = document.createElement('audio');
+        audio.src = fileUrl;
+        audio.controls = true;
+        container.appendChild(audio);
+      } else {
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.target = '_blank';
+        link.textContent = fileName || 'download file';
+        link.style.padding = '0.55rem 1.1rem';
+        link.style.display = 'inline-block';
+        link.style.fontSize = '0.82rem';
+        link.style.color = '#1a1a1a';
+        container.appendChild(link);
+      }
+      return container;
+    }
+
+    // ---- FETCH ENTRIES ----
+    async function fetchEntries() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('diary_entries')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          if (error.code === '42P01') {
+            console.warn('Table diary_entries does not exist.');
+            showStatus('⚠️ Table "diary_entries" not found. Please create it in Supabase.', true);
+            return [];
+          }
+          throw error;
+        }
+        return data || [];
+      } catch (err) {
+        console.error('Fetch error:', err);
+        showStatus('Error loading entries: ' + err.message, true);
+        return [];
+      }
+    }
+
+    // ---- UPLOAD FILE ----
+    async function uploadFile(file) {
+      if (!file) return null;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `diary/${fileName}`;
+      const { data, error } = await supabaseClient
+        .storage
+        .from('diary_media')
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+      if (error) {
+        if (error.message.includes('bucket')) {
+          throw new Error('Storage bucket "diary_media" not found. Please create it in Supabase Storage.');
+        }
+        throw error;
+      }
+      const { data: urlData } = supabaseClient
+        .storage
+        .from('diary_media')
+        .getPublicUrl(filePath);
+      return {
+        path: filePath,
+        url: urlData.publicUrl,
+        name: file.name,
+        type: file.type,
+        size: file.size
+      };
+    }
+
+    // ---- SAVE ENTRY ----
+    async function saveEntry(entryData) {
+      const { data, error } = await supabaseClient
+        .from('diary_entries')
+        .insert([entryData])
+        .select();
+      if (error) throw error;
+      return data[0];
+    }
+
+    // ---- DELETE ENTRY ----
+    async function deleteEntry(entryId, filePath) {
+      if (!confirm('Delete this entry permanently?')) return;
+      try {
+        const { error: dbError } = await supabaseClient
+          .from('diary_entries')
+          .delete()
+          .eq('id', entryId);
+        if (dbError) throw dbError;
+        if (filePath) {
+          const { error: storageError } = await supabaseClient
+            .storage
+            .from('diary_media')
+            .remove([filePath]);
+          if (storageError) {
+            console.warn('Could not delete file from storage:', storageError.message);
+          }
+        }
+        await renderEntries();
+        showStatus('Entry deleted.');
+      } catch (err) {
+        console.error('Delete failed:', err);
+        showStatus('Delete failed: ' + err.message, true);
+      }
+    }
+
+    // ---- RENDER ENTRIES (with animation) ----
+    async function renderEntries() {
+      entriesContainer.innerHTML = '<div class="empty-state" style="opacity:0.6;"><span class="loading-spinner"></span> loading entries…</div>';
+      currentEntries = await fetchEntries();
+      entryCountSpan.textContent = currentEntries.length;
+      if (!currentEntries.length) {
+        entriesContainer.innerHTML = `
+          <div class="empty-state" id="emptyState">
+            no entries yet — add your first memory ✨
+          </div>
+        `;
+        return;
+      }
+      entriesContainer.innerHTML = '';
+      currentEntries.forEach((entry, index) => {
+        const card = document.createElement('div');
+        card.className = 'entry-card';
+        card.style.animationDelay = `${index * 0.06}s`;
+        // ----- content side -----
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'entry-content';
+        const titleEl = document.createElement('div');
+        titleEl.className = 'entry-title';
+        titleEl.textContent = entry.title || 'untitled';
+        contentDiv.appendChild(titleEl);
+        if (entry.note) {
+          const noteEl = document.createElement('div');
+          noteEl.className = 'entry-note';
+          noteEl.textContent = entry.note;
+          contentDiv.appendChild(noteEl);
+        }
+        const dateEl = document.createElement('div');
+        dateEl.className = 'entry-date';
+        dateEl.textContent = formatDate(entry.created_at);
+        contentDiv.appendChild(dateEl);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'delete';
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteEntry(entry.id, entry.file_path);
+        });
+        contentDiv.appendChild(deleteBtn);
+        // ----- media side -----
+        const mediaDiv = document.createElement('div');
+        mediaDiv.className = 'entry-media';
+        if (entry.file_url) {
+          const preview = createMediaPreview(entry.file_type, entry.file_url, entry.file_name);
+          if (preview) mediaDiv.appendChild(preview);
+          const fileInfo = document.createElement('div');
+          fileInfo.className = 'file-info';
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = entry.file_name || 'file';
+          nameSpan.style.maxWidth = '180px';
+          nameSpan.style.overflow = 'hidden';
+          nameSpan.style.textOverflow = 'ellipsis';
+          nameSpan.style.whiteSpace = 'nowrap';
+          fileInfo.appendChild(nameSpan);
+          const link = document.createElement('a');
+          link.href = entry.file_url;
+          link.target = '_blank';
+          link.textContent = 'open';
+          fileInfo.appendChild(link);
+          mediaDiv.appendChild(fileInfo);
+        } else {
+          const noFile = document.createElement('div');
+          noFile.style.fontSize = '0.78rem';
+          noFile.style.color = '#777';
+          noFile.textContent = 'no attachment';
+          mediaDiv.appendChild(noFile);
+        }
+        card.appendChild(contentDiv);
+        card.appendChild(mediaDiv);
+        entriesContainer.appendChild(card);
+      });
+    }
+
+    // ---- HANDLE UPLOAD ----
+    async function handleUpload() {
+      const title = titleInput.value.trim();
+      const note = noteInput.value.trim();
+      const file = fileInput.files[0];
+      if (!title && !note && !file) {
+        showStatus('add a title, note, or file before saving.', true);
+        return;
+      }
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="loading-spinner"></span> saving…';
+      formStatus.style.display = 'none';
+      try {
+        let fileData = null;
+        if (file) {
+          try {
+            fileData = await uploadFile(file);
+          } catch (err) {
+            throw new Error('File upload failed: ' + err.message);
+          }
+        }
+        const entry = {
+          title: title || null,
+          note: note || null,
+          file_url: fileData ? fileData.url : null,
+          file_name: fileData ? fileData.name : null,
+          file_type: fileData ? fileData.type : null,
+          file_path: fileData ? fileData.path : null,
+          file_size: fileData ? fileData.size : null,
+        };
+        await saveEntry(entry);
+        titleInput.value = '';
+        noteInput.value = '';
+        fileInput.value = '';
+        await renderEntries();
+        showStatus('✓ entry saved!');
+      } catch (err) {
+        console.error('Save error:', err);
+        showStatus(err.message, true);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '✦ save entry';
+      }
+    }
+
+    // ---- INITIALIZE ----
+    async function init() {
+      // First show password modal (modern locked experience)
+      showPasswordModal();
+
+      uploadBtn.addEventListener('click', handleUpload);
+      titleInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleUpload();
+        }
+      });
+    }
+
+    init();
+  })();
+</script>
+</body>
+</html>
+```
